@@ -3,11 +3,15 @@ export class BasePage {
     this.page = page;
   }
 
-  async navigate(url) {
-    await this.page.goto(url);
+  async navigate(path = '') {
+    await this.page.goto(path);
   }
 
   async waitForLoad() {
-    await this.page.waitForLoadState('domcontentloaded');
+    await this.page.waitForLoadState('networkidle');
+  }
+
+  async takeScreenshot(name) {
+    await this.page.screenshot({ path: `screenshots/${name}.png` });
   }
 }
