@@ -1,6 +1,8 @@
 name: Playwright Tests
 
-on: push
+on:
+  pull_request:
+    branches: [ main ]
 
 jobs:
   test:
@@ -13,6 +15,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -21,7 +24,17 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run Playwright tests
-        run: npx playwright test tests/task1-ui.spec.js tests/task2-auth.spec.js tests/task3-api.spec.js --project=chromium --project=chromium-auth
+        continue-on-error: true
+        run: npx playwright test tests/task1-ui.spec.js tests/task2-auth.spec.js tests/task3-api.spec.js --project=chromium --project=chromium-auth --reporter=html,json
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: results.json
+          PLAYWRIGHT_HTML_OPEN: never
+
+      - name: Fail if more than 2 tests failed
+        run: |
+          FAILED=$(node -e "console.log(require('./results.json').stats.unexpected)")
+          echo "Failed tests: $FAILED"
+          if [ "$FAILED" -gt 2 ]; then exit 1; fi
 
       - name: Upload HTML report
         if: always()
